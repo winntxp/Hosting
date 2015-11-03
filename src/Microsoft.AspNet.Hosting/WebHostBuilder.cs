@@ -43,8 +43,6 @@ namespace Microsoft.AspNet.Hosting
         private IServerFactory _serverFactory;
         private IServer _server;
 
-        private IHttpApplication _application;
-
         public WebHostBuilder()
             : this(config: new ConfigurationBuilder().Build())
         {
@@ -144,8 +142,6 @@ namespace Microsoft.AspNet.Hosting
             engine.StartupType = _startupType;
             engine.StartupAssemblyName = _startupAssemblyName ?? _config[ApplicationKey] ?? _config[OldApplicationKey] ?? appEnvironment.ApplicationName;
 
-            engine.Application = _application;
-
             return engine;
         }
 
@@ -163,17 +159,6 @@ namespace Microsoft.AspNet.Hosting
             }
 
             _hostingEnvironment.EnvironmentName = environment;
-            return this;
-        }
-
-        public WebHostBuilder UseApplication(IHttpApplication application)
-        {
-            if (application == null)
-            {
-                throw new ArgumentNullException(nameof(application));
-            }
-
-            _application = application;
             return this;
         }
 
