@@ -455,11 +455,11 @@ namespace Microsoft.AspNet.Hosting
             return new WebHostBuilder(config ?? new ConfigurationBuilder().Build());
         }
 
-        public void Start(IHttpApplication app)
+        public void Start<THttpContext>(IHttpApplication<THttpContext> app)
         {
-            var startInstance = new StartInstance(app.InvokeAsync);
+            var startInstance = new StartInstance();
             _startInstances.Add(startInstance);
-            app.InvokeAsync(app.CreateHttpContext(Features));
+            app.InvokeAsync(app.CreateHttpContext(Features)); // this is really bad
         }
 
         public void Dispose()
@@ -482,13 +482,6 @@ namespace Microsoft.AspNet.Hosting
 
         private class StartInstance : IDisposable
         {
-            private readonly RequestDelegate _application;
-
-            public StartInstance(RequestDelegate application)
-            {
-                _application = application;
-            }
-
             public int DisposeCalls { get; set; }
 
             public void Dispose()
