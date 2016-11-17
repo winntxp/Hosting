@@ -34,7 +34,9 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         {
             var httpContext = _httpContextFactory.Create(contextFeatures);
             var diagnoticsEnabled = _diagnosticSource.IsEnabled("Microsoft.AspNetCore.Hosting.BeginRequest");
-            var startTimestamp = (diagnoticsEnabled || _logger.IsEnabled(LogLevel.Information)) ? Stopwatch.GetTimestamp() : 0;
+            var startTimestamp = (diagnoticsEnabled
+                || _logger.IsEnabled(LogLevel.Information)
+                || HostingEventSource.Log.IsEnabled()) ? Stopwatch.GetTimestamp() : 0;
 
             var scope = _logger.RequestScope(httpContext);
             _logger.RequestStarting(httpContext);

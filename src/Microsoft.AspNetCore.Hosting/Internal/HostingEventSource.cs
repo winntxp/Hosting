@@ -11,7 +11,22 @@ namespace Microsoft.AspNetCore.Hosting.Internal
     {
         public static readonly HostingEventSource Log = new HostingEventSource();
 
-        private HostingEventSource() { }
+#if NETSTANDARD1_5
+        private EventCounter _requestCounter = null;
+        private EventCounter _successfulRequestCounter = null;
+        private EventCounter _failedRequestCounter = null;
+        private EventCounter _requestExecutionTimeCounter = null;
+#endif
+
+        private HostingEventSource()
+        {
+#if NETSTANDARD1_5
+            _requestCounter = new EventCounter("Request", this);
+            _successfulRequestCounter = new EventCounter("SuccessfulRequest", this);
+            _failedRequestCounter = new EventCounter("FailedRequest", this);
+            _requestExecutionTimeCounter = new EventCounter("RequestExecutionTime", this);
+#endif
+        }
 
         // NOTE
         // - The 'Start' and 'Stop' suffixes on the following event names have special meaning in EventSource. They
@@ -35,12 +50,52 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         [Event(3, Level = EventLevel.Informational)]
         public void RequestStart(string method, string path)
         {
+#if NETSTANDARD1_5
+            _requestCounter.WriteMetric(1);
+#endif
+            if (IsEnabled())
+            {
+                RequestStart(
+                    context.TraceIdentifier,
+                    context.Request.Protocol,
+                    context.Request.Method,
+                    context.Request.ContentType ?? string.Empty,
+                    context.Request.ContentLength.HasValue ? context.Request.ContentLength.Value.ToString() : string.Empty,
+                    context.Request.Scheme,
+                    context.Request.Host.ToString(),
+                    context.Request.PathBase,
+                    context.Request.Path,
+                    context.Request.QueryString.ToString());
+            }
             WriteEvent(3, method, path);
         }
 
         [Event(4, Level = EventLevel.Informational)]
         public void RequestStop()
         {
+#if NETSTANDARD1_5
+            if (exception == null)
+            {
+                _successfulRequestCounter.WriteMetric(1);
+            }
+            else
+            {
+                _failedRequestCounter.WriteMetric(1);
+            }
+
+            if (endTimestamp != 0)
+            {
+                _requestExecutionTimeCounter.WriteMetric(endTimestamp - startTimestamp);
+            }
+#endif
+            if (IsEnabled())
+            {
+                RequestStop(
+                    context.Response.StatusCode,
+                    context.Response.ContentType ?? string.Empty,
+                    context.TraceIdentifier,
+                    exception == null ? string.Empty : exception.ToString());
+            }
             WriteEvent(4);
         }
 

@@ -65,6 +65,7 @@
     "netstandard1.5": {
       "dependencies": {
         "System.Diagnostics.StackTrace": "4.4.0-*",
+        "System.Diagnostics.Tracing": "4.4.0-*",
         "System.Runtime.Loader": "4.4.0-*"
       }
     }
