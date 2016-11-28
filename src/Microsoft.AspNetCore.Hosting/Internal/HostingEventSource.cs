@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Diagnostics.Tracing;
-using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.Hosting.Internal
 {
@@ -53,56 +52,37 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 #if NETSTANDARD1_5
             _requestCounter.WriteMetric(1);
 #endif
-            if (IsEnabled())
-            {
-                RequestStart(
-                    context.TraceIdentifier,
-                    context.Request.Protocol,
-                    context.Request.Method,
-                    context.Request.ContentType ?? string.Empty,
-                    context.Request.ContentLength.HasValue ? context.Request.ContentLength.Value.ToString() : string.Empty,
-                    context.Request.Scheme,
-                    context.Request.Host.ToString(),
-                    context.Request.PathBase,
-                    context.Request.Path,
-                    context.Request.QueryString.ToString());
-            }
             WriteEvent(3, method, path);
         }
 
-        [Event(4, Level = EventLevel.Informational)]
-        public void RequestStop()
+        [NonEvent]
+        public void RequestStop(long startTimestamp, long endTimestamp)
         {
 #if NETSTANDARD1_5
-            if (exception == null)
-            {
-                _successfulRequestCounter.WriteMetric(1);
-            }
-            else
-            {
-                _failedRequestCounter.WriteMetric(1);
-            }
+            _successfulRequestCounter.WriteMetric(1);
 
             if (endTimestamp != 0)
             {
                 _requestExecutionTimeCounter.WriteMetric(endTimestamp - startTimestamp);
             }
 #endif
-            if (IsEnabled())
-            {
-                RequestStop(
-                    context.Response.StatusCode,
-                    context.Response.ContentType ?? string.Empty,
-                    context.TraceIdentifier,
-                    exception == null ? string.Empty : exception.ToString());
-            }
+            RequestStop();
+        }
+
+        [Event(4, Level = EventLevel.Informational)]
+        private void RequestStop()
+        {
             WriteEvent(4);
         }
 
         [Event(5, Level = EventLevel.Error)]
         public void UnhandledException()
         {
+#if NETSTANDARD1_5
+            _failedRequestCounter.WriteMetric(1);
+#endif
             WriteEvent(5);
         }
+
     }
 }

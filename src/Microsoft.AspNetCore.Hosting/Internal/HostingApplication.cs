@@ -59,10 +59,11 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         {
             var httpContext = context.HttpContext;
 
+            long currentTimestamp;
             if (exception == null)
             {
                 var diagnoticsEnabled = _diagnosticSource.IsEnabled("Microsoft.AspNetCore.Hosting.EndRequest");
-                var currentTimestamp = (diagnoticsEnabled || context.StartTimestamp != 0) ? Stopwatch.GetTimestamp() : 0;
+                currentTimestamp = (diagnoticsEnabled || context.StartTimestamp != 0) ? Stopwatch.GetTimestamp() : 0;
 
                 _logger.RequestFinished(httpContext, context.StartTimestamp, currentTimestamp);
 
@@ -76,7 +77,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             else
             {
                 var diagnoticsEnabled = _diagnosticSource.IsEnabled("Microsoft.AspNetCore.Hosting.UnhandledException");
-                var currentTimestamp = (diagnoticsEnabled || context.StartTimestamp != 0) ? Stopwatch.GetTimestamp() : 0;
+                currentTimestamp = (diagnoticsEnabled || context.StartTimestamp != 0) ? Stopwatch.GetTimestamp() : 0;
 
                 _logger.RequestFinished(httpContext, context.StartTimestamp, currentTimestamp);
 
@@ -88,7 +89,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 HostingEventSource.Log.UnhandledException();
             }
 
-            HostingEventSource.Log.RequestStop();
+            HostingEventSource.Log.RequestStop(context.StartTimestamp, currentTimestamp);
 
             context.Scope?.Dispose();
 
