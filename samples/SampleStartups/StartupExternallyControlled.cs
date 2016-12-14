@@ -10,7 +10,7 @@ namespace SampleStartups
 {
     public class StartupExternallyControlled : StartupBase
     {
-        private IWebHost _host;
+        private IHost _host;
         private readonly List<string> _urls = new List<string>();
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -28,10 +28,15 @@ namespace SampleStartups
 
         public void Start()
         {
-            _host = new WebHostBuilder()
-                //.UseKestrel()
-                .UseStartup<StartupExternallyControlled>()
-                .Start(_urls.ToArray());
+            _host = new HostBuilder()
+                .UseWebHostBuilder(b =>
+                {
+
+                })
+                .UseRabbitMq()
+                .Build();
+
+            _host.Start();
         }
 
         public void Stop()

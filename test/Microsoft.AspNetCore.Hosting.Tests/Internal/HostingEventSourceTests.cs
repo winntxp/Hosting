@@ -15,7 +15,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         public void MatchesNameAndGuid()
         {
             // Arrange & Act
-            var eventSourceType = typeof(WebHost).GetTypeInfo().Assembly.GetType(
+            var eventSourceType = typeof(Host).GetTypeInfo().Assembly.GetType(
                 "Microsoft.AspNetCore.Hosting.Internal.HostingEventSource",
                 throwOnError: true,
                 ignoreCase: false);

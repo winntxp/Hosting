@@ -11,14 +11,14 @@ namespace Microsoft.AspNetCore.Hosting.WindowsServices
     /// </summary>
     public class WebHostService : ServiceBase
     {
-        private IWebHost _host;
+        private IHost _host;
         private bool _stopRequestedByWindows;
 
         /// <summary>
         /// Creates an instance of <c>WebHostService</c> which hosts the specified web application.
         /// </summary>
         /// <param name="host">The configured web host containing the web application to host in the Windows service.</param>
-        public WebHostService(IWebHost host)
+        public WebHostService(IHost host)
         {
             _host = host;
         }

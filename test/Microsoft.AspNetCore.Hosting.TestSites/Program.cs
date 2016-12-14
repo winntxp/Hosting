@@ -17,7 +17,7 @@ namespace ServerComparison.TestSites
                 .AddCommandLine(args)
                 .Build();
 
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                 .UseServer(new NoopServer())
                 .UseConfiguration(config)
                 .UseStartup("Microsoft.AspNetCore.Hosting.TestSites");

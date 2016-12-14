@@ -9,13 +9,8 @@ namespace Microsoft.AspNetCore.Hosting
     /// <summary>
     /// Represents a configured web host.
     /// </summary>
-    public interface IWebHost : IDisposable
+    public interface IHost : IDisposable
     {
-        /// <summary>
-        /// The <see cref="IFeatureCollection"/> exposed by the configured server.
-        /// </summary>
-        IFeatureCollection ServerFeatures { get; }
-
         /// <summary>
         /// The <see cref="IServiceProvider"/> for the host.
         /// </summary>

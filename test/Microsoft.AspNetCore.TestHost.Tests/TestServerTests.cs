@@ -26,14 +26,14 @@ namespace Microsoft.AspNetCore.TestHost
         {
             // Arrange
             // Act & Assert (Does not throw)
-            new TestServer(new WebHostBuilder().Configure(app => { }));
+            new TestServer(new HostBuilder().Configure(app => { }));
         }
 
 
         [Fact]
         public void DoesNotCaptureStartupErrorsByDefault()
         {
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                 .Configure(app =>
                 {
                     throw new InvalidOperationException();
@@ -46,7 +46,7 @@ namespace Microsoft.AspNetCore.TestHost
         [Fact]
         public void CaptureStartupErrorsSettingPreserved()
         {
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                 .CaptureStartupErrors(true)
                 .Configure(app =>
                 {
@@ -61,7 +61,7 @@ namespace Microsoft.AspNetCore.TestHost
         public void ApplicationServicesAvailableFromTestServer()
         {
             var testService = new TestService();
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                 .Configure(app => { })
                 .ConfigureServices(services =>
                 {
@@ -76,7 +76,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task RequestServicesAutoCreated()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -113,7 +113,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CustomServiceProviderSetsApplicationServices()
         {
-            var builder = new WebHostBuilder().UseStartup<CustomContainerStartup>();
+            var builder = new HostBuilder().UseStartup<CustomContainerStartup>();
             var server = new TestServer(builder);
             string result = await server.CreateClient().GetStringAsync("/path");
             Assert.Equal("ApplicationServicesEqual:True", result);
@@ -156,7 +156,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task ExistingRequestServicesWillNotBeReplaced()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -178,7 +178,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CanSetCustomServiceProvider()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -228,7 +228,7 @@ namespace Microsoft.AspNetCore.TestHost
         public async Task ExistingServiceProviderFeatureWillNotBeReplaced()
         {
             var appServices = new ServiceCollection().BuildServiceProvider();
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -270,7 +270,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task WillReplaceServiceProviderFeatureWithNullRequestServices()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -292,7 +292,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CanAccessLogger()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -310,7 +310,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CanAccessHttpContext()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -342,7 +342,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CanAddNewHostServices()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -365,7 +365,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CreateInvokesApp()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(context =>
                 {
@@ -382,7 +382,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task DisposeStreamIgnored()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(async context =>
                 {
@@ -401,7 +401,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task DisposedServerThrows()
         {
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 app.Run(async context =>
                 {
@@ -421,7 +421,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CancelAborts()
         {
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                                   .Configure(app =>
                                   {
                                       app.Run(context =>
@@ -440,7 +440,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CanCreateViaStartupType()
         {
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                 .UseStartup<TestStartup>();
             var server = new TestServer(builder);
             HttpResponseMessage result = await server.CreateClient().GetAsync("/");
@@ -452,7 +452,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono, SkipReason = "Hangs randomly (issue #507)")]
         public async Task CanCreateViaStartupTypeAndSpecifyEnv()
         {
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                             .UseStartup<TestStartup>()
                             .UseEnvironment("Foo");
             var server = new TestServer(builder);
@@ -468,7 +468,7 @@ namespace Microsoft.AspNetCore.TestHost
         {
             DiagnosticListener diagnosticListener = null;
 
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                             .Configure(app =>
                             {
                                 diagnosticListener = app.ApplicationServices.GetRequiredService<DiagnosticListener>();
@@ -497,7 +497,7 @@ namespace Microsoft.AspNetCore.TestHost
         public async Task ExceptionDiagnosticAvailable()
         {
             DiagnosticListener diagnosticListener = null;
-            var builder = new WebHostBuilder().Configure(app =>
+            var builder = new HostBuilder().Configure(app =>
             {
                 diagnosticListener = app.ApplicationServices.GetRequiredService<DiagnosticListener>();
                 app.Run(context =>

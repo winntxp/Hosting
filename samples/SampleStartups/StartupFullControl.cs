@@ -20,7 +20,7 @@ namespace SampleStartups
                 .AddJsonFile("hosting.json", optional: true)
                 .Build();
 
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseConfiguration(config) // Default set of configurations to use, may be subsequently overridden 
               //.UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory()) // Override the content root with the current directory

@@ -1,76 +1,82 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using Microsoft.AspNetCore.Builder;
+using System.Runtime.ExceptionServices;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting.Internal;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Hosting
 {
     public static class WebHostBuilderExtensions
     {
-        /// <summary>
-        /// Specify the startup method to be used to configure the web application.
-        /// </summary>
-        /// <param name="hostBuilder">The <see cref="IWebHostBuilder"/> to configure.</param>
-        /// <param name="configureApp">The delegate that configures the <see cref="IApplicationBuilder"/>.</param>
-        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
-        public static IWebHostBuilder Configure(this IWebHostBuilder hostBuilder, Action<IApplicationBuilder> configureApp)
+        public static IHostBuilder UseWebApplication(this IHostBuilder builder, Action<WebApplicationBuilder> configure)
         {
-            if (configureApp == null)
+            return builder.ConfigureServices(services =>
             {
-                throw new ArgumentNullException(nameof(configureApp));
-            }
+                var webApplication = new WebApplicationBuilder(services);
+                configure(webApplication);
 
-            var startupAssemblyName = configureApp.GetMethodInfo().DeclaringType.GetTypeInfo().Assembly.GetName().Name;
+                // TODO: Configuration
+                var configuration = new ConfigurationBuilder().Build();
+                var options = new WebHostOptions();
 
-            return hostBuilder.UseSetting(WebHostDefaults.ApplicationKey, startupAssemblyName)
-                              .ConfigureServices(services =>
-                              {
-                                  services.AddSingleton<IStartup>(new DelegateStartup(configureApp));
-                              });
+                if (!string.IsNullOrEmpty(options.StartupAssembly))
+                {
+                    try
+                    {
+                        var startupType = StartupLoader.FindStartupType(options.StartupAssembly, builder.HostingEnvironment.EnvironmentName);
+
+                        if (typeof(IStartup).GetTypeInfo().IsAssignableFrom(startupType.GetTypeInfo()))
+                        {
+                            services.AddSingleton(typeof(IStartup), startupType);
+                        }
+                        else
+                        {
+                            services.AddSingleton(typeof(IStartup), sp =>
+                            {
+                                var hostingEnvironment = sp.GetRequiredService<IHostingEnvironment>();
+                                var methods = StartupLoader.LoadMethods(sp, startupType, hostingEnvironment.EnvironmentName);
+                                return new ConventionBasedStartup(methods);
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        var capture = ExceptionDispatchInfo.Capture(ex);
+                        services.AddSingleton<IStartup>(_ =>
+                        {
+                            capture.Throw();
+                            return null;
+                        });
+                    }
+                }
+
+                // Conjure up a RequestServices
+                services.AddTransient<IStartupFilter, AutoRequestServicesStartupFilter>();
+
+                services.AddSingleton<IHostedService>(sp =>
+                {
+                    return new WebService(services, sp, options, configuration);
+                });
+            });
+        }
+    }
+
+    public class WebApplicationBuilder
+    {
+        public WebApplicationBuilder(IServiceCollection services)
+        {
+            Services = services;
         }
 
+        IServiceCollection Services { get; }
 
-        /// <summary>
-        /// Specify the startup type to be used by the web host.
-        /// </summary>
-        /// <param name="hostBuilder">The <see cref="IWebHostBuilder"/> to configure.</param>
-        /// <param name="startupType">The <see cref="Type"/> to be used.</param>
-        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
-        public static IWebHostBuilder UseStartup(this IWebHostBuilder hostBuilder, Type startupType)
+        public void UseStartup<TStartup>()
         {
-            var startupAssemblyName = startupType.GetTypeInfo().Assembly.GetName().Name;
-
-            return hostBuilder.UseSetting(WebHostDefaults.ApplicationKey, startupAssemblyName)
-                              .ConfigureServices(services =>
-                              {
-                                  if (typeof(IStartup).GetTypeInfo().IsAssignableFrom(startupType.GetTypeInfo()))
-                                  {
-                                      services.AddSingleton(typeof(IStartup), startupType);
-                                  }
-                                  else
-                                  {
-                                      services.AddSingleton(typeof(IStartup), sp =>
-                                      {
-                                          var hostingEnvironment = sp.GetRequiredService<IHostingEnvironment>();
-                                          return new ConventionBasedStartup(StartupLoader.LoadMethods(sp, startupType, hostingEnvironment.EnvironmentName));
-                                      });
-                                  }
-                              });
-        }
-
-        /// <summary>
-        /// Specify the startup type to be used by the web host.
-        /// </summary>
-        /// <param name="hostBuilder">The <see cref="IWebHostBuilder"/> to configure.</param>
-        /// <typeparam name ="TStartup">The type containing the startup methods for the application.</typeparam>
-        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
-        public static IWebHostBuilder UseStartup<TStartup>(this IWebHostBuilder hostBuilder) where TStartup : class
-        {
-            return hostBuilder.UseStartup(typeof(TStartup));
+            // Services.AddSingleton<IStartup, TStartup>();
         }
     }
 }

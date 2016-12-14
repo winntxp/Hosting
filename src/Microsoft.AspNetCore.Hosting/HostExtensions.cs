@@ -7,18 +7,17 @@ using System.Reflection;
 using System.Runtime.Loader;
 #endif
 using System.Threading;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Hosting
 {
-    public static class WebHostExtensions
+    public static class HostExtensions
     {
         /// <summary>
         /// Runs a web application and block the calling thread until host shutdown.
         /// </summary>
-        /// <param name="host">The <see cref="IWebHost"/> to run.</param>
-        public static void Run(this IWebHost host)
+        /// <param name="host">The <see cref="IHost"/> to run.</param>
+        public static void Run(this IHost host)
         {
             var done = new ManualResetEventSlim(false);
             using (var cts = new CancellationTokenSource())
@@ -53,14 +52,14 @@ namespace Microsoft.AspNetCore.Hosting
         /// <summary>
         /// Runs a web application and block the calling thread until token is triggered or shutdown is triggered.
         /// </summary>
-        /// <param name="host">The <see cref="IWebHost"/> to run.</param>
+        /// <param name="host">The <see cref="IHost"/> to run.</param>
         /// <param name="token">The token to trigger shutdown.</param>
-        public static void Run(this IWebHost host, CancellationToken token)
+        public static void Run(this IHost host, CancellationToken token)
         {
             host.Run(token, shutdownMessage: null);
         }
 
-        private static void Run(this IWebHost host, CancellationToken token, string shutdownMessage)
+        private static void Run(this IHost host, CancellationToken token, string shutdownMessage)
         {
             using (host)
             {
@@ -71,15 +70,6 @@ namespace Microsoft.AspNetCore.Hosting
 
                 Console.WriteLine($"Hosting environment: {hostingEnvironment.EnvironmentName}");
                 Console.WriteLine($"Content root path: {hostingEnvironment.ContentRootPath}");
-
-                var serverAddresses = host.ServerFeatures.Get<IServerAddressesFeature>()?.Addresses;
-                if (serverAddresses != null)
-                {
-                    foreach (var address in serverAddresses)
-                    {
-                        Console.WriteLine($"Now listening on: {address}");
-                    }
-                }
 
                 if (!string.IsNullOrEmpty(shutdownMessage))
                 {

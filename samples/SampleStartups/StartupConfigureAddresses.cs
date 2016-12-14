@@ -23,7 +23,7 @@ namespace SampleStartups
         {
             var config = new ConfigurationBuilder().AddCommandLine(args).Build();
 
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseConfiguration(config)
                 .UseStartup<StartupConfigureAddresses>()
                 .UseUrls("http://localhost:5000", "http://localhost:5001")

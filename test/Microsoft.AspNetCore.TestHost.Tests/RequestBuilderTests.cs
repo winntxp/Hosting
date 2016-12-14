@@ -14,7 +14,7 @@ namespace Microsoft.AspNetCore.TestHost
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
         public void AddRequestHeader()
         {
-            var builder = new WebHostBuilder().Configure(app => { });
+            var builder = new HostBuilder().Configure(app => { });
             var server = new TestServer(builder);
             server.CreateRequest("/")
                 .AddHeader("Host", "MyHost:90")
@@ -27,7 +27,7 @@ namespace Microsoft.AspNetCore.TestHost
         [Fact]
         public void AddContentHeaders()
         {
-            var builder = new WebHostBuilder().Configure(app => { });
+            var builder = new HostBuilder().Configure(app => { });
             var server = new TestServer(builder);
             server.CreateRequest("/")
                 .AddHeader("Content-Type", "Test/Value")

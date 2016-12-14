@@ -20,9 +20,12 @@ namespace SampleStartups
         // Entry point for the application.
         public static void Main(string[] args)
         {
-            var host = new WebHostBuilder()
-              //.UseKestrel()
-                .UseStartup<StartupHelloWorld>()
+            var host = new HostBuilder()
+                .UseWebApplication(app =>
+                {
+                    // app.UseKestrel();
+                    app.UseStartup<StartupHelloWorld>();
+                })
                 .Build();
 
             host.Run();

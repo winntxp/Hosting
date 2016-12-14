@@ -281,10 +281,10 @@ namespace Microsoft.AspNetCore.TestHost
         {
             // This logger will attempt to access information from HttpRequest once the HttpContext is created
             var logger = new VerifierLogger();
-            var builder = new WebHostBuilder()
+            var builder = new HostBuilder()
                             .ConfigureServices(services =>
                             {
-                                services.AddSingleton<ILogger<WebHost>>(logger);
+                                services.AddSingleton<ILogger<Host>>(logger);
                             })
                             .Configure(app =>
                             {
@@ -299,7 +299,7 @@ namespace Microsoft.AspNetCore.TestHost
             var result = await server.CreateClient().GetStringAsync("/");
         }
 
-        private class VerifierLogger : ILogger<WebHost>
+        private class VerifierLogger : ILogger<Host>
         {
             public IDisposable BeginScope<TState>(TState state) => new NoopDispoasble();
 

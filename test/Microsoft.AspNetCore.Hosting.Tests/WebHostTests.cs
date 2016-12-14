@@ -692,7 +692,7 @@ namespace Microsoft.AspNetCore.Hosting
             public void Configure(IApplicationBuilder app) { }
         }
 
-        private IWebHost CreateHost(RequestDelegate requestDelegate)
+        private IHost CreateHost(RequestDelegate requestDelegate)
         {
             var builder = CreateBuilder()
                 .UseServer(this)
@@ -705,9 +705,9 @@ namespace Microsoft.AspNetCore.Hosting
             return builder.Build();
         }
 
-        private IWebHostBuilder CreateBuilder(IConfiguration config = null)
+        private IHostBuilder CreateBuilder(IConfiguration config = null)
         {
-            return new WebHostBuilder().UseConfiguration(config ?? new ConfigurationBuilder().Build()).UseStartup("Microsoft.AspNetCore.Hosting.Tests");
+            return new HostBuilder().UseConfiguration(config ?? new ConfigurationBuilder().Build()).UseStartup("Microsoft.AspNetCore.Hosting.Tests");
         }
 
         private static bool[] RegisterCallbacksThatThrow(IServiceCollection services)

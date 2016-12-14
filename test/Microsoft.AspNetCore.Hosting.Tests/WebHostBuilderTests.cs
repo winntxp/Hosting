@@ -29,7 +29,7 @@ namespace Microsoft.AspNetCore.Hosting
         {
             var builder = CreateWebHostBuilder().UseServer(new TestServer());
 
-            var host = (WebHost)builder.UseStartup("MyStartupAssembly").Build();
+            var host = (Host)builder.UseStartup("MyStartupAssembly").Build();
 
             Assert.Equal("MyStartupAssembly", host.Options.ApplicationName);
             Assert.Equal("MyStartupAssembly", host.Options.StartupAssembly);
@@ -148,11 +148,11 @@ namespace Microsoft.AspNetCore.Hosting
         [Fact]
         public void DefaultCreatesLoggerFactory()
         {
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>();
 
-            var host = (WebHost)hostBuilder.Build();
+            var host = (Host)hostBuilder.Build();
 
             Assert.NotNull(host.Services.GetService<ILoggerFactory>());
         }
@@ -162,12 +162,12 @@ namespace Microsoft.AspNetCore.Hosting
         {
             var loggerFactory = new LoggerFactory();
 
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseLoggerFactory(loggerFactory)
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>();
 
-            var host = (WebHost)hostBuilder.Build();
+            var host = (Host)hostBuilder.Build();
 
             Assert.Same(loggerFactory, host.Services.GetService<ILoggerFactory>());
         }
@@ -176,7 +176,7 @@ namespace Microsoft.AspNetCore.Hosting
         public void MultipleConfigureLoggingInvokedInOrder()
         {
             var callCount = 0; //Verify ordering
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .ConfigureLogging(loggerFactory =>
                 {
                     Assert.Equal(0, callCount++);
@@ -188,14 +188,14 @@ namespace Microsoft.AspNetCore.Hosting
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>();
 
-            var host = (WebHost)hostBuilder.Build();
+            var host = (Host)hostBuilder.Build();
             Assert.Equal(2, callCount);
         }
 
         [Fact]
         public void DoNotCaptureStartupErrorsByDefault()
         {
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseServer(new TestServer())
                 .UseStartup<StartupBoom>();
 
@@ -206,7 +206,7 @@ namespace Microsoft.AspNetCore.Hosting
         [Fact]
         public void CaptureStartupErrorsHonored()
         {
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .CaptureStartupErrors(false)
                 .UseServer(new TestServer())
                 .UseStartup<StartupBoom>();
@@ -219,7 +219,7 @@ namespace Microsoft.AspNetCore.Hosting
         public void ConfigureServices_CanBeCalledMultipleTimes()
         {
             var callCount = 0; // Verify ordering
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseServer(new TestServer())
                 .ConfigureServices(services =>
                 {
@@ -243,13 +243,13 @@ namespace Microsoft.AspNetCore.Hosting
         [Fact]
         public void CodeBasedSettingsCodeBasedOverride()
         {
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseSetting(WebHostDefaults.EnvironmentKey, "EnvA")
                 .UseSetting(WebHostDefaults.EnvironmentKey, "EnvB")
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>();
 
-            var host = (WebHost)hostBuilder.Build();
+            var host = (Host)hostBuilder.Build();
 
             Assert.Equal("EnvB", host.Options.Environment);
         }
@@ -266,13 +266,13 @@ namespace Microsoft.AspNetCore.Hosting
                 .AddInMemoryCollection(settings)
                 .Build();
 
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseSetting(WebHostDefaults.EnvironmentKey, "EnvA")
                 .UseConfiguration(config)
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>();
 
-            var host = (WebHost)hostBuilder.Build();
+            var host = (Host)hostBuilder.Build();
 
             Assert.Equal("EnvB", host.Options.Environment);
         }
@@ -289,13 +289,13 @@ namespace Microsoft.AspNetCore.Hosting
                 .AddInMemoryCollection(settings)
                 .Build();
 
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseConfiguration(config)
                 .UseSetting(WebHostDefaults.EnvironmentKey, "EnvB")
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>();
 
-            var host = (WebHost)hostBuilder.Build();
+            var host = (Host)hostBuilder.Build();
 
             Assert.Equal("EnvB", host.Options.Environment);
         }
@@ -321,13 +321,13 @@ namespace Microsoft.AspNetCore.Hosting
                 .AddInMemoryCollection(overrideSettings)
                 .Build();
 
-            var hostBuilder = new WebHostBuilder()
+            var hostBuilder = new HostBuilder()
                 .UseConfiguration(config)
                 .UseConfiguration(overrideConfig)
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>();
 
-            var host = (WebHost)hostBuilder.Build();
+            var host = (Host)hostBuilder.Build();
 
             Assert.Equal("EnvB", host.Options.Environment);
         }
@@ -344,7 +344,7 @@ namespace Microsoft.AspNetCore.Hosting
             var config = builder.Build();
 
             var expected = "MY_TEST_ENVIRONMENT";
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseConfiguration(config)
                 .UseEnvironment(expected)
                 .UseServer(new TestServer())
@@ -366,7 +366,7 @@ namespace Microsoft.AspNetCore.Hosting
             var config = builder.Build();
 
             var expected = "MY_TEST_ENVIRONMENT";
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseConfiguration(config)
                 .UseEnvironment(expected)
                 .UseServer(new TestServer())
@@ -387,7 +387,7 @@ namespace Microsoft.AspNetCore.Hosting
                 .AddInMemoryCollection(vals);
             var config = builder.Build();
 
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseConfiguration(config)
                 .UseContentRoot("/")
                 .UseServer(new TestServer())
@@ -403,7 +403,7 @@ namespace Microsoft.AspNetCore.Hosting
             var contentRootNet451 = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
                 "testroot" : "../../../../test/Microsoft.AspNetCore.Hosting.Tests/testroot";
 
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
 #if NET451
                 .UseContentRoot(contentRootNet451)
 #else
@@ -421,7 +421,7 @@ namespace Microsoft.AspNetCore.Hosting
         [Fact]
         public void DefaultContentRootIsApplicationBasePath()
         {
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseServer(new TestServer())
                 .UseStartup("Microsoft.AspNetCore.Hosting.Tests")
                 .Build();
@@ -434,7 +434,7 @@ namespace Microsoft.AspNetCore.Hosting
         public void DefaultApplicationNameToStartupAssemblyName()
         {
             var builder = new ConfigurationBuilder();
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseServer(new TestServer())
                 .UseStartup("Microsoft.AspNetCore.Hosting.Tests")
                 .Build();
@@ -447,7 +447,7 @@ namespace Microsoft.AspNetCore.Hosting
         public void DefaultApplicationNameToStartupType()
         {
             var builder = new ConfigurationBuilder();
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseServer(new TestServer())
                 .UseStartup<StartupNoServices>()
                 .UseStartup("Microsoft.AspNetCore.Hosting.Tests.NonExistent")
@@ -461,7 +461,7 @@ namespace Microsoft.AspNetCore.Hosting
         public void DefaultApplicationNameAndBasePathToStartupMethods()
         {
             var builder = new ConfigurationBuilder();
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseServer(new TestServer())
                 .Configure(app => { })
                 .UseStartup("Microsoft.AspNetCore.Hosting.Tests.NonExistent")
@@ -474,7 +474,7 @@ namespace Microsoft.AspNetCore.Hosting
         [Fact]
         public void Configure_SupportsNonStaticMethodDelegate()
         {
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseServer(new TestServer())
                 .Configure(app => { })
                 .Build();
@@ -486,7 +486,7 @@ namespace Microsoft.AspNetCore.Hosting
         [Fact]
         public void Configure_SupportsStaticMethodDelegate()
         {
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseServer(new TestServer())
                 .Configure(StaticConfigureMethod)
                 .Build();
@@ -576,7 +576,7 @@ namespace Microsoft.AspNetCore.Hosting
         private static void StaticConfigureMethod(IApplicationBuilder app)
         { }
 
-        private IWebHostBuilder CreateWebHostBuilder()
+        private IHostBuilder CreateWebHostBuilder()
         {
             var vals = new Dictionary<string, string>
             {
@@ -586,7 +586,7 @@ namespace Microsoft.AspNetCore.Hosting
             var builder = new ConfigurationBuilder()
                 .AddInMemoryCollection(vals);
             var config = builder.Build();
-            return new WebHostBuilder().UseConfiguration(config);
+            return new HostBuilder().UseConfiguration(config);
         }
 
         private async Task AssertResponseContains(RequestDelegate app, string expectedText)

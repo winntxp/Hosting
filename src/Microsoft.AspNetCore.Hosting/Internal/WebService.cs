@@ -1,7 +1,4 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -13,7 +10,6 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Hosting.Views;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,7 +17,7 @@ using Microsoft.Extensions.StackTrace.Sources;
 
 namespace Microsoft.AspNetCore.Hosting.Internal
 {
-    public class WebHost : IWebHost
+    public class WebService : IHostedService, IDisposable
     {
         private static readonly string DeprecatedServerUrlsKey = "server.urls";
 
@@ -36,14 +32,12 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
         private IServiceProvider _applicationServices;
         private RequestDelegate _application;
-        private ILogger<WebHost> _logger;
+        private ILogger<WebService> _logger;
 
         // Used for testing only
         internal WebHostOptions Options => _options;
 
-        private IServer Server { get; set; }
-
-        public WebHost(
+        public WebService(
             IServiceCollection appServices,
             IServiceProvider hostingServiceProvider,
             WebHostOptions options,
@@ -68,25 +62,18 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             _options = options;
             _applicationServiceCollection = appServices;
             _hostingServiceProvider = hostingServiceProvider;
-            _applicationServiceCollection.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
-            _applicationServiceCollection.AddSingleton<HostedServiceExecutor>();
         }
 
-        public IServiceProvider Services
+        public IServer Server { get; set; }
+
+        public void Stop()
         {
-            get
-            {
-                EnsureApplicationServices();
-                return _applicationServices;
-            }
+            throw new NotImplementedException();
         }
 
-        public IFeatureCollection ServerFeatures
+        public void Dispose()
         {
-            get
-            {
-                return Server?.Features;
-            }
+            throw new NotImplementedException();
         }
 
         public void Initialize()
@@ -97,27 +84,13 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             }
         }
 
-        public virtual void Start()
+        public void Start()
         {
-            HostingEventSource.Log.HostStart();
-            _logger = _applicationServices.GetRequiredService<ILogger<WebHost>>();
-            _logger.Starting();
-
             Initialize();
 
-            _applicationLifetime = _applicationServices.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
-            _hostedServiceExecutor = _applicationServices.GetRequiredService<HostedServiceExecutor>();
             var diagnosticSource = _applicationServices.GetRequiredService<DiagnosticSource>();
             var httpContextFactory = _applicationServices.GetRequiredService<IHttpContextFactory>();
             Server.Start(new HostingApplication(_application, _logger, diagnosticSource, httpContextFactory));
-
-            // Fire IApplicationLifetime.Started
-            _applicationLifetime?.NotifyStarted();
-
-            // Fire IHostedService.Start
-            _hostedServiceExecutor.Start();
-
-            _logger.Started();
         }
 
         private void EnsureApplicationServices()
@@ -173,7 +146,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
                 // Write errors to standard out so they can be retrieved when not in development mode.
                 Console.Out.WriteLine("Application startup exception: " + ex.ToString());
-                var logger = _applicationServices.GetRequiredService<ILogger<WebHost>>();
+                var logger = _applicationServices.GetRequiredService<ILogger<WebService>>();
                 logger.ApplicationError(ex);
 
                 // Generate an HTML error page.
@@ -246,25 +219,6 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                     }
                 }
             }
-        }
-
-        public void Dispose()
-        {
-            _logger?.Shutdown();
-
-            // Fire IApplicationLifetime.Stopping
-            _applicationLifetime?.StopApplication();
-
-            // Fire the IHostedService.Stop
-            _hostedServiceExecutor?.Stop();
-
-            (_hostingServiceProvider as IDisposable)?.Dispose();
-            (_applicationServices as IDisposable)?.Dispose();
-
-            // Fire IApplicationLifetime.Stopped
-            _applicationLifetime?.NotifyStopped();
-
-            HostingEventSource.Log.HostStop();
         }
     }
 }

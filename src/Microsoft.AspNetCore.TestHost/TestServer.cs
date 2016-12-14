@@ -16,11 +16,11 @@ namespace Microsoft.AspNetCore.TestHost
     {
         private const string DefaultEnvironmentName = "Development";
         private const string ServerName = nameof(TestServer);
-        private IWebHost _hostInstance;
+        private IHost _hostInstance;
         private bool _disposed = false;
         private IHttpApplication<Context> _application;
 
-        public TestServer(IWebHostBuilder builder)
+        public TestServer(IHostBuilder builder)
         {
             var host = builder.UseServer(this).Build();
             host.Start();
@@ -29,7 +29,7 @@ namespace Microsoft.AspNetCore.TestHost
 
         public Uri BaseAddress { get; set; } = new Uri("http://localhost/");
 
-        public IWebHost Host
+        public IHost Host
         {
             get
             {

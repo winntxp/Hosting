@@ -5,14 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
-using Microsoft.AspNetCore.Hosting.Builder;
 using Microsoft.AspNetCore.Hosting.Internal;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -20,9 +15,9 @@ using Microsoft.Extensions.PlatformAbstractions;
 namespace Microsoft.AspNetCore.Hosting
 {
     /// <summary>
-    /// A builder for <see cref="IWebHost"/>
+    /// A builder for <see cref="IHost"/>
     /// </summary>
-    public class WebHostBuilder : IWebHostBuilder
+    public class HostBuilder : IHostBuilder
     {
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly List<Action<IServiceCollection>> _configureServicesDelegates;
@@ -30,43 +25,30 @@ namespace Microsoft.AspNetCore.Hosting
 
         private IConfiguration _config;
         private ILoggerFactory _loggerFactory;
-        private WebHostOptions _options;
-        private bool _webHostBuilt;
+        private bool _hostBuilt;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="WebHostBuilder"/> class.
+        /// Initializes a new instance of the <see cref="HostBuilder"/> class.
         /// </summary>
-        public WebHostBuilder()
+        public HostBuilder()
         {
             _hostingEnvironment = new HostingEnvironment();
             _configureServicesDelegates = new List<Action<IServiceCollection>>();
             _configureLoggingDelegates = new List<Action<ILoggerFactory>>();
 
             _config = new ConfigurationBuilder()
-                .AddEnvironmentVariables(prefix: "ASPNETCORE_")
                 .Build();
-
-            if (string.IsNullOrEmpty(GetSetting(WebHostDefaults.EnvironmentKey)))
-            {
-                // Try adding legacy environment keys, never remove these.
-                UseSetting(WebHostDefaults.EnvironmentKey, Environment.GetEnvironmentVariable("Hosting:Environment")
-                    ?? Environment.GetEnvironmentVariable("ASPNET_ENV"));
-            }
-
-            if (string.IsNullOrEmpty(GetSetting(WebHostDefaults.ServerUrlsKey)))
-            {
-                // Try adding legacy url key, never remove this.
-                UseSetting(WebHostDefaults.ServerUrlsKey, Environment.GetEnvironmentVariable("ASPNETCORE_SERVER.URLS"));
-            }
         }
+
+        public IHostingEnvironment HostingEnvironment => _hostingEnvironment;
 
         /// <summary>
         /// Add or replace a setting in the configuration.
         /// </summary>
         /// <param name="key">The key of the setting to add or replace.</param>
         /// <param name="value">The value of the setting to add or replace.</param>
-        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
-        public IWebHostBuilder UseSetting(string key, string value)
+        /// <returns>The <see cref="IHostBuilder"/>.</returns>
+        public IHostBuilder UseSetting(string key, string value)
         {
             _config[key] = value;
             return this;
@@ -86,8 +68,8 @@ namespace Microsoft.AspNetCore.Hosting
         /// Specify the <see cref="ILoggerFactory"/> to be used by the web host.
         /// </summary>
         /// <param name="loggerFactory">The <see cref="ILoggerFactory"/> to be used.</param>
-        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
-        public IWebHostBuilder UseLoggerFactory(ILoggerFactory loggerFactory)
+        /// <returns>The <see cref="IHostBuilder"/>.</returns>
+        public IHostBuilder UseLoggerFactory(ILoggerFactory loggerFactory)
         {
             if (loggerFactory == null)
             {
@@ -103,8 +85,8 @@ namespace Microsoft.AspNetCore.Hosting
         /// multiple times.
         /// </summary>
         /// <param name="configureServices">A delegate for configuring the <see cref="IServiceCollection"/>.</param>
-        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
-        public IWebHostBuilder ConfigureServices(Action<IServiceCollection> configureServices)
+        /// <returns>The <see cref="IHostBuilder"/>.</returns>
+        public IHostBuilder ConfigureServices(Action<IServiceCollection> configureServices)
         {
             if (configureServices == null)
             {
@@ -119,8 +101,8 @@ namespace Microsoft.AspNetCore.Hosting
         /// Adds a delegate for configuring the provided <see cref="ILoggerFactory"/>. This may be called multiple times.
         /// </summary>
         /// <param name="configureLogging">The delegate that configures the <see cref="ILoggerFactory"/>.</param>
-        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
-        public IWebHostBuilder ConfigureLogging(Action<ILoggerFactory> configureLogging)
+        /// <returns>The <see cref="IHostBuilder"/>.</returns>
+        public IHostBuilder ConfigureLogging(Action<ILoggerFactory> configureLogging)
         {
             if (configureLogging == null)
             {
@@ -132,15 +114,15 @@ namespace Microsoft.AspNetCore.Hosting
         }
 
         /// <summary>
-        /// Builds the required services and an <see cref="IWebHost"/> which hosts a web application.
+        /// Builds the required services and an <see cref="IHost"/> which hosts a web application.
         /// </summary>
-        public IWebHost Build()
+        public IHost Build()
         {
-            if (_webHostBuilt)
+            if (_hostBuilt)
             {
                 throw new InvalidOperationException(Resources.WebHostBuilder_SingleInstance);
             }
-            _webHostBuilt = true;
+            _hostBuilt = true;
 
             // Warn about deprecated environment variables
             if (Environment.GetEnvironmentVariable("Hosting:Environment") != null)
@@ -159,32 +141,23 @@ namespace Microsoft.AspNetCore.Hosting
             }
 
             var hostingServices = BuildCommonServices();
-            var applicationServices = hostingServices.Clone();
             var hostingServiceProvider = hostingServices.BuildServiceProvider();
 
-            AddApplicationServices(applicationServices, hostingServiceProvider);
-
-            var host = new WebHost(
-                applicationServices,
-                hostingServiceProvider,
-                _options,
-                _config);
-
-            host.Initialize();
+            var host = new Host(hostingServiceProvider);
 
             return host;
         }
 
         private IServiceCollection BuildCommonServices()
         {
-            _options = new WebHostOptions(_config);
+            var options = new WebHostOptions(_config);
 
             var appEnvironment = PlatformServices.Default.Application;
-            var contentRootPath = ResolveContentRootPath(_options.ContentRootPath, appEnvironment.ApplicationBasePath);
-            var applicationName = _options.ApplicationName ?? appEnvironment.ApplicationName;
+            var contentRootPath = ResolveContentRootPath(options.ContentRootPath, appEnvironment.ApplicationBasePath);
+            var applicationName = options.ApplicationName ?? appEnvironment.ApplicationName;
 
             // Initialize the hosting environment
-            _hostingEnvironment.Initialize(applicationName, contentRootPath, _options);
+            _hostingEnvironment.Initialize(applicationName, contentRootPath, options);
 
             var services = new ServiceCollection();
             services.AddSingleton(_hostingEnvironment);
@@ -212,47 +185,14 @@ namespace Microsoft.AspNetCore.Hosting
             services.AddSingleton<DiagnosticListener>(listener);
             services.AddSingleton<DiagnosticSource>(listener);
 
-            services.AddTransient<IApplicationBuilderFactory, ApplicationBuilderFactory>();
-            services.AddTransient<IHttpContextFactory, HttpContextFactory>();
+            services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
+            services.AddSingleton<HostedServiceExecutor>();
             services.AddOptions();
 
-            // Conjure up a RequestServices
-            services.AddTransient<IStartupFilter, AutoRequestServicesStartupFilter>();
             services.AddTransient<IServiceProviderFactory<IServiceCollection>, DefaultServiceProviderFactory>();
 
             // Ensure object pooling is available everywhere.
             services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
-
-            if (!string.IsNullOrEmpty(_options.StartupAssembly))
-            {
-                try
-                {
-                    var startupType = StartupLoader.FindStartupType(_options.StartupAssembly, _hostingEnvironment.EnvironmentName);
-
-                    if (typeof(IStartup).GetTypeInfo().IsAssignableFrom(startupType.GetTypeInfo()))
-                    {
-                        services.AddSingleton(typeof(IStartup), startupType);
-                    }
-                    else
-                    {
-                        services.AddSingleton(typeof(IStartup), sp =>
-                        {
-                            var hostingEnvironment = sp.GetRequiredService<IHostingEnvironment>();
-                            var methods = StartupLoader.LoadMethods(sp, startupType, hostingEnvironment.EnvironmentName);
-                            return new ConventionBasedStartup(methods);
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var capture = ExceptionDispatchInfo.Capture(ex);
-                    services.AddSingleton<IStartup>(_ =>
-                    {
-                        capture.Throw();
-                        return null;
-                    });
-                }
-            }
 
             foreach (var configureServices in _configureServicesDelegates)
             {
@@ -260,20 +200,6 @@ namespace Microsoft.AspNetCore.Hosting
             }
 
             return services;
-        }
-
-        private void AddApplicationServices(IServiceCollection services, IServiceProvider hostingServiceProvider)
-        {
-            // We are forwarding services from hosting contrainer so hosting container
-            // can still manage their lifetime (disposal) shared instances with application services.
-            // NOTE: This code overrides original services lifetime. Instances would always be singleton in
-            // application container.
-            var loggerFactory = hostingServiceProvider.GetService<ILoggerFactory>();
-            services.Replace(ServiceDescriptor.Singleton(typeof(ILoggerFactory), loggerFactory));
-
-            var listener = hostingServiceProvider.GetService<DiagnosticListener>();
-            services.Replace(ServiceDescriptor.Singleton(typeof(DiagnosticListener), listener));
-            services.Replace(ServiceDescriptor.Singleton(typeof(DiagnosticSource), listener));
         }
 
         private string ResolveContentRootPath(string contentRootPath, string basePath)

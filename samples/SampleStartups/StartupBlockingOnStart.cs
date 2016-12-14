@@ -32,7 +32,7 @@ namespace SampleStartups
         {
             var config = new ConfigurationBuilder().AddCommandLine(args).Build();
 
-            var host = new WebHostBuilder()
+            var host = new HostBuilder()
                 .UseConfiguration(config)
                 .UseStartup<StartupBlockingOnStart>()
                 .Build();

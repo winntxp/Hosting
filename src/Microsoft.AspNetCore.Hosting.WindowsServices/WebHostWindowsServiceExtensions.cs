@@ -6,14 +6,14 @@ using System.ServiceProcess;
 namespace Microsoft.AspNetCore.Hosting.WindowsServices
 {
     /// <summary>
-    ///     Extensions to <see cref="IWebHost"/> for hosting inside a Windows service.
+    ///     Extensions to <see cref="IHost"/> for hosting inside a Windows service.
     /// </summary>
     public static class WebHostWindowsServiceExtensions
     {
         /// <summary>
         ///     Runs the specified web application inside a Windows service and blocks until the service is stopped.
         /// </summary>
-        /// <param name="host">An instance of the <see cref="IWebHost"/> to host in the Windows service.</param>
+        /// <param name="host">An instance of the <see cref="IHost"/> to host in the Windows service.</param>
         /// <example>
         ///     This example shows how to use <see cref="RunAsService"/>.
         ///     <code>
@@ -33,7 +33,7 @@ namespace Microsoft.AspNetCore.Hosting.WindowsServices
         ///         }
         ///     </code>
         /// </example>
-        public static void RunAsService(this IWebHost host)
+        public static void RunAsService(this IHost host)
         {
             var webHostService = new WebHostService(host);
             ServiceBase.Run(webHostService);
