@@ -71,8 +71,6 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 {
                     _diagnosticSource.Write("Microsoft.AspNetCore.Hosting.EndRequest", new { httpContext = httpContext, timestamp = currentTimestamp });
                 }
-
-                HostingEventSource.Log.RequestStop(httpContext);
             }
             else
             {
